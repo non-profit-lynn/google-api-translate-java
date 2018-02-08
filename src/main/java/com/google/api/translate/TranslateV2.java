@@ -20,14 +20,16 @@
  */
 package com.google.api.translate;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URL;
-import java.net.URLEncoder;
+import java.util.Scanner;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.google.api.GoogleAPI;
 import com.google.api.GoogleAPIException;
+import com.google.api.GoogleCloudAPI;
 import com.tecnick.htmlutils.htmlentities.HTMLEntities;
 
 /**
@@ -36,34 +38,46 @@ import com.tecnick.htmlutils.htmlentities.HTMLEntities;
  * @author William Ferguson
  * @author Richard Midwinter
  */
-public final class TranslateV2 extends GoogleAPI implements Translate {
+public final class TranslateV2 extends GoogleCloudAPI implements Translate {
 
 	/**
 	 * Constants.
 	 */
-	private static final String URL = "https://www.googleapis.com/language/translate/v2";
-	private static final String PAR_TEMPLATE = "key=%s&q=%s&target=%s";
+	private static final String URL = "https://translation.googleapis.com/language/translate/v2";
 
+	private String getLocalAccessToken() {
+		try { return new Scanner(new File("localAccessToken")).useDelimiter("\\A").next().trim(); }
+		catch (FileNotFoundException e) { e.printStackTrace(); return null; }
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public String execute(final String text, final Language from, final Language to) throws GoogleAPIException {
 		try {
-			validateReferrer();
 
-			if (key == null) {
-				throw new IllegalStateException("You MUST have a Google API Key to use the V2 APIs. See http://code.google.com/apis/language/translate/v2/getting_started.html");
-			}
+			// SET UP TOKEN
+			validateToken(getLocalAccessToken());
 
-			final String parameters = String.format(PAR_TEMPLATE, key, URLEncoder.encode(text, ENCODING), to.toString())
-					+ (Language.AUTO_DETECT.equals(from) ? "" : String.format("&source=%s", from.toString()));
+			
+			// SET UP REQUEST
+			JSONObject request = new JSONObject();
+			request.put("q", text);
+			request.put("source", from.toString());
+			request.put("target", to.toString());
+			request.put("format", "text");
+			validateRequest(request.toString());
+			
 
+			// MAKE REQUEST
 			final URL url = new URL(URL);
+			final JSONObject json = postJSON(url);
 
-			final JSONObject json = retrieveJSON(url,parameters);
-
+			
+			// GET RESPONSE
 			return getJSONResponse(json);
+			
 		} catch (final Exception e) {
 			System.out.println("Error: " +e.getMessage());
 
@@ -71,13 +85,15 @@ public final class TranslateV2 extends GoogleAPI implements Translate {
 		}
 	}
 
+
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public String[] execute(final String[] text, final Language from, final Language to) throws GoogleAPIException {
 		try {
-			validateReferrer();
+//			validateToken();
+//			validateRequest();
 			
 			final Language[] fromArgs = new Language[text.length];
 			final Language[] toArgs = new Language[text.length];
@@ -99,7 +115,8 @@ public final class TranslateV2 extends GoogleAPI implements Translate {
 	@Override
 	public String[] execute(final String text, final Language from, final Language[] to) throws GoogleAPIException {
 		try {
-			validateReferrer();
+//			validateToken();
+//			validateRequest();
 			
 			final String[] textArgs = new String[to.length];
 			final Language[] fromArgs = new Language[to.length];
@@ -121,7 +138,8 @@ public final class TranslateV2 extends GoogleAPI implements Translate {
 	@Override
 	public String[] execute(final String[] text, final Language from[], final Language[] to) throws GoogleAPIException {
 		try {
-			validateReferrer();
+//			validateToken();
+//			validateRequest();
 			
 			if (text.length != from.length || from.length != to.length) {
 				throw new Exception(

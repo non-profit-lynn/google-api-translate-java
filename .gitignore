@@ -1,3 +1,6 @@
 *.sh
 .settings/
 target/
+project.properties
+google-cloud-api-key.json
+localAccessToken
