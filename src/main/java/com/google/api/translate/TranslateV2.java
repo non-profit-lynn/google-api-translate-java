@@ -50,7 +50,6 @@ public final class TranslateV2 extends GoogleAPI implements Translate {
 	@Override
 	public String execute(final String text, final Language from, final Language to) throws GoogleAPIException {
 		try {
-			validateReferrer();
 
 			if (key == null) {
 				throw new IllegalStateException("You MUST have a Google API Key to use the V2 APIs. See http://code.google.com/apis/language/translate/v2/getting_started.html");
